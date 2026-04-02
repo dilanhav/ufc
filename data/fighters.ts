@@ -20,23 +20,31 @@ export interface FighterStats {
   losses: number;
   draws: number;
 
-  // Source: UFCStats / fight previews
-  sigStrikesLanded: number;   // per min
-  sigStrikesAbsorbed: number; // per min
-  sigStrikeAccuracy: number;  // %
-  sigStrikeDefense: number;   // %
+  // Striking (UFCStats)
+  sigStrikesLanded: number;    // per min
+  sigStrikesAbsorbed: number;  // per min
+  sigStrikeAccuracy: number;   // %
+  sigStrikeDefense: number;    // %
+  knockdownAvg: number;        // knockdowns LANDED per 15 min
 
-  takedownAvg: number;        // per 15 min
-  takedownAccuracy: number;   // %
-  takedownDefense: number;    // %
-  submissionAvg: number;      // per 15 min
+  // Grappling
+  takedownAvg: number;
+  takedownAccuracy: number;
+  takedownDefense: number;
+  submissionAvg: number;
 
-  // Finish breakdown (for skill scoring)
-  koTkoWins: number;          // UFC KO/TKO wins
-  submissionWins: number;     // UFC submission wins
-  ufcKoLosses: number;        // times stopped by strikes in UFC
-  careerKoLosses: number;     // total career KO/TKO losses
-  knockdownsAbsorbed: number; // UFC knockdowns absorbed
+  // Finish breakdown
+  koTkoWins: number;
+  submissionWins: number;
+  ufcKoLosses: number;
+  careerKoLosses: number;
+  knockdownsAbsorbed: number;
+
+  // Record context
+  winsAsFavorite: number;
+  lossesAsFavorite: number;
+  winsAsUnderdog: number;
+  lossesAsUnderdog: number;
 
   lastFights: FightRecord[];
 }
@@ -50,12 +58,134 @@ export interface Fighter {
   ranking?: number;
   weightClass: string;
   nationality: string;
-  // Multiple URL candidates tried in order; first to load wins
   imageUrls: string[];
   stats: FighterStats;
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function clamp(v: number, min = 1, max = 10) {
+  return Math.min(max, Math.max(min, Math.round(v * 10) / 10));
+}
+
+function cdnUrls(last: string, first: string, dates: string[]): string[] {
+  return dates.map(
+    (d) =>
+      `https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/${d}/${last}_${first}_L_${d.replace("-", "")}.png`
+  );
+}
+
+// ─── Skill score computation ──────────────────────────────────────────────────
+
+export interface SkillScores {
+  boxing: number;
+  kickboxing: number;
+  grappling: number;
+  bjj: number;
+  durability: number;
+  standUpDefense: number;
+}
+
+export function computeSkillScores(f: Fighter): SkillScores {
+  const s = f.stats;
+
+  // Boxing: based on volume (SLpM), accuracy, total KO wins, knockdown avg, finishing power
+  const boxing = clamp(
+    3.5 +
+      (s.sigStrikesLanded / 6) * 2.0 +       // volume component (max ~2.0 at 6 SLpM)
+      (s.sigStrikeAccuracy / 100) * 2.0 +    // accuracy (max 2.0)
+      s.koTkoWins * 0.3 +                    // KO finishing power
+      s.knockdownAvg * 1.2                   // ability to drop opponents
+  );
+
+  // Kickboxing: volume + defense + variety (accuracy as proxy for technique)
+  const kickboxing = clamp(
+    3.5 +
+      (s.sigStrikesLanded / 6) * 1.8 +
+      (s.sigStrikeDefense / 100) * 2.0 +
+      s.koTkoWins * 0.25 +
+      (s.sigStrikeAccuracy / 100) * 1.2
+  );
+
+  // Grappling: TD volume, accuracy, defense
+  const grappling = clamp(
+    3.5 +
+      Math.min(s.takedownAvg / 4, 1) * 2.5 +
+      (s.takedownAccuracy / 100) * 1.5 +
+      (s.takedownDefense / 100) * 2.0
+  );
+
+  // BJJ: submission wins, sub avg, grappling base
+  const bjj = clamp(
+    3.0 +
+      s.submissionWins * 0.35 +
+      Math.min(s.submissionAvg / 3, 1) * 2.5 +
+      (s.takedownDefense / 100) * 1.0
+  );
+
+  // Durability: penalise UFC KO losses heavily, career KO losses moderately, knockdowns and high absorption
+  const durability = clamp(
+    8.5 -
+      s.ufcKoLosses * 1.3 -
+      (s.careerKoLosses - s.ufcKoLosses) * 0.5 -
+      s.knockdownsAbsorbed * 0.35 -
+      (s.sigStrikesAbsorbed > 4.5 ? 0.8 : s.sigStrikesAbsorbed > 3.5 ? 0.4 : 0)
+  );
+
+  // Stand-up defense: lower SApM = better, higher str defense % = better
+  const standUpDefense = clamp(
+    10 - s.sigStrikesAbsorbed * 0.85 + (s.sigStrikeDefense - 50) * 0.04
+  );
+
+  return { boxing, kickboxing, grappling, bjj, durability, standUpDefense };
+}
+
+// ─── Recent-form win probability (60% weight) + skills (40%) ─────────────────
+
+export function computeRecentFormScore(fights: FightRecord[]): number {
+  const last5 = fights.slice(0, 5);
+  const weights = [5, 4, 3, 2, 1];
+  let wWins = 0, wTotal = 0;
+  last5.forEach((f, i) => {
+    const w = weights[i] ?? 1;
+    wTotal += w;
+    if (f.result === "W") wWins += w;
+  });
+  return wTotal > 0 ? wWins / wTotal : 0.5;
+}
+
+export function computeWinProbability(
+  f1: Fighter,
+  f2: Fighter
+): { prob1: number; prob2: number } {
+  const s1 = computeSkillScores(f1);
+  const s2 = computeSkillScores(f2);
+
+  const avg = (s: SkillScores) =>
+    (s.boxing + s.kickboxing + s.grappling + s.bjj + s.durability) / 5;
+
+  const skillTotal = avg(s1) + avg(s2) || 1;
+  const sp1 = avg(s1) / skillTotal;
+
+  const form1 = computeRecentFormScore(f1.stats.lastFights);
+  const form2 = computeRecentFormScore(f2.stats.lastFights);
+  const formTotal = form1 + form2 || 1;
+  const fp1 = form1 / formTotal;
+
+  const raw1 = sp1 * 0.4 + fp1 * 0.6;
+  const raw2 = (1 - sp1) * 0.4 + (1 - fp1) * 0.6;
+  const rawTotal = raw1 + raw2;
+
+  return {
+    prob1: Math.round((raw1 / rawTotal) * 1000) / 10,
+    prob2: Math.round((raw2 / rawTotal) * 1000) / 10,
+  };
+}
+
+// ─── Fighter roster ──────────────────────────────────────────────────────────
+
 export const FIGHTERS: Record<string, Fighter> = {
+  // ── MAIN EVENT ──────────────────────────────────────────────────────────────
   moicano: {
     id: "moicano",
     name: "Renato Moicano",
@@ -69,43 +199,23 @@ export const FIGHTERS: Record<string, Fighter> = {
       "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-06/MOICANO_RENATO_L_06282025.png",
       "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-01/MOICANO_RENATO_L_01182025.png",
       "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-09/MOICANO_RENATO_L_09282024.png",
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-04/MOICANO_RENATO_L_04132024.png",
     ],
     stats: {
-      age: 36,
-      height: "5'11\"",
-      weight: "155 lbs",
-      reach: "75\"",
-      stance: "Orthodox",
-      country: "Brazil",
-      gym: "Evolve MMA",
-
-      wins: 20,
-      losses: 7,
-      draws: 1,
-
-      // Source: UFCStats via fight preview (Apr 2026)
-      sigStrikesLanded: 4.17,
-      sigStrikesAbsorbed: 3.57,
-      sigStrikeAccuracy: 37,
-      sigStrikeDefense: 59,
-      takedownAvg: 1.67,
-      takedownAccuracy: 44,
-      takedownDefense: 62,
-      submissionAvg: 1.4,
-
-      koTkoWins: 2,          // Turner (UFC 300), Saint-Denis (UFC Paris)
-      submissionWins: 6,     // UFC career
-      ufcKoLosses: 3,        // Aldo, Korean Zombie, Kevin Holland
-      careerKoLosses: 3,
-      knockdownsAbsorbed: 1, // vs Jalin Turner (UFC 300), recovered to win
-
+      age: 36, height: "5'11\"", weight: "155 lbs", reach: "75\"",
+      stance: "Orthodox", country: "Brazil", gym: "Evolve MMA",
+      wins: 20, losses: 7, draws: 1,
+      sigStrikesLanded: 4.17, sigStrikesAbsorbed: 3.57,
+      sigStrikeAccuracy: 37, sigStrikeDefense: 59,
+      knockdownAvg: 0.44,
+      takedownAvg: 1.67, takedownAccuracy: 44, takedownDefense: 62, submissionAvg: 1.4,
+      koTkoWins: 2, submissionWins: 6, ufcKoLosses: 3, careerKoLosses: 3, knockdownsAbsorbed: 1,
+      winsAsFavorite: 5, lossesAsFavorite: 3, winsAsUnderdog: 7, lossesAsUnderdog: 4,
       lastFights: [
-        { opponent: "Beneil Dariush",    result: "L", method: "DEC (Unanimous)",     event: "UFC 317",              round: 3, date: "Jun 28, 2025" },
-        { opponent: "Islam Makhachev",   result: "L", method: "SUB (RNC)",           event: "UFC 311",              round: 1, date: "Jan 18, 2025" },
-        { opponent: "Benoit Saint-Denis",result: "W", method: "TKO (Doctor Stop)",   event: "UFC Fight Night Paris", round: 2, date: "Sep 28, 2024" },
-        { opponent: "Jalin Turner",      result: "W", method: "TKO (Ground & Pound).",event: "UFC 300",              round: 2, date: "Apr 13, 2024" },
-        { opponent: "Drew Dober",        result: "W", method: "DEC (Unanimous)",     event: "UFC Fight Night",       round: 3, date: "Feb 3, 2024" },
+        { opponent: "Beneil Dariush",     result: "L", method: "DEC (Unanimous)",      event: "UFC 317",              round: 3, date: "Jun 28, 2025" },
+        { opponent: "Islam Makhachev",    result: "L", method: "SUB (RNC)",            event: "UFC 311",              round: 1, date: "Jan 18, 2025" },
+        { opponent: "Benoit Saint-Denis", result: "W", method: "TKO (Doctor Stop)",    event: "UFC Fight Night Paris", round: 2, date: "Sep 28, 2024" },
+        { opponent: "Jalin Turner",       result: "W", method: "TKO (Ground & Pound)", event: "UFC 300",              round: 2, date: "Apr 13, 2024" },
+        { opponent: "Drew Dober",         result: "W", method: "DEC (Unanimous)",      event: "UFC Fight Night",       round: 3, date: "Feb 3, 2024" },
       ],
     },
   },
@@ -116,175 +226,285 @@ export const FIGHTERS: Record<string, Fighter> = {
     firstName: "Chris",
     lastName: "Duncan",
     nickname: "The Problem",
-    ranking: undefined,
     weightClass: "Lightweight",
     nationality: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
     imageUrls: [
       "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-12/DUNCAN_CHRIS_L_12062025.png",
       "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-08/DUNCAN_CHRIS_L_08022025.png",
       "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-03/DUNCAN_CHRIS_L_03222025.png",
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-09/DUNCAN_CHRIS_L_09282024.png",
     ],
     stats: {
-      age: 32,
-      height: "5'10\"",
-      weight: "155 lbs",
-      reach: "72\"",
-      stance: "Orthodox",
-      country: "Scotland",
-      gym: "American Top Team",
-
-      wins: 15,
-      losses: 2,
-      draws: 0,
-
-      // Source: UFCStats via fight preview (Apr 2026)
-      sigStrikesLanded: 5.02,
-      sigStrikesAbsorbed: 4.82,
-      sigStrikeAccuracy: 43,
-      sigStrikeDefense: 51,
-      takedownAvg: 3.27,
-      takedownAccuracy: 42,
-      takedownDefense: 50,
-      submissionAvg: 2.8,
-
-      koTkoWins: 0,          // No UFC KO/TKO wins; Contender Series KO of Campbell doesn't count
-      submissionWins: 8,     // Career: McKinney, Vucenic, Oki, + pre-UFC
-      ufcKoLosses: 0,        // Never stopped by strikes in the UFC
-      careerKoLosses: 1,     // Borshchev (Contender Series, stopped at 0:28 R2)
-      knockdownsAbsorbed: 0, // No UFC knockdowns confirmed
-
+      age: 32, height: "5'10\"", weight: "155 lbs", reach: "72\"",
+      stance: "Orthodox", country: "Scotland", gym: "American Top Team",
+      wins: 15, losses: 2, draws: 0,
+      sigStrikesLanded: 5.02, sigStrikesAbsorbed: 4.82,
+      sigStrikeAccuracy: 43, sigStrikeDefense: 51,
+      knockdownAvg: 0.18,
+      takedownAvg: 3.27, takedownAccuracy: 42, takedownDefense: 50, submissionAvg: 2.8,
+      koTkoWins: 0, submissionWins: 8, ufcKoLosses: 0, careerKoLosses: 1, knockdownsAbsorbed: 0,
+      winsAsFavorite: 6, lossesAsFavorite: 1, winsAsUnderdog: 5, lossesAsUnderdog: 1,
       lastFights: [
-        { opponent: "Terrance McKinney", result: "W", method: "SUB (Anaconda)",    event: "UFC 323",               round: 1, date: "Dec 6, 2025" },
-        { opponent: "Jordan Vucenic",    result: "W", method: "SUB (Guillotine)",  event: "UFC Fight Night London", round: 2, date: "Mar 22, 2025" },
-        { opponent: "Mateusz Rebecki",   result: "W", method: "DEC (Unanimous)",   event: "UFC on ESPN",            round: 3, date: "Aug 2, 2025" },
-        { opponent: "Bolaji Oki",        result: "W", method: "SUB (Guillotine)",  event: "UFC Fight Night Paris",  round: 1, date: "Sep 28, 2024" },
-        { opponent: "Manuel Torres",     result: "L", method: "SUB (RNC)",         event: "UFC Fight Night",        round: 1, date: "Feb 24, 2024" },
+        { opponent: "Terrance McKinney", result: "W", method: "SUB (Anaconda)",   event: "UFC 323",               round: 1, date: "Dec 6, 2025" },
+        { opponent: "Mateusz Rebecki",   result: "W", method: "DEC (Unanimous)",  event: "UFC on ESPN",           round: 3, date: "Aug 2, 2025" },
+        { opponent: "Jordan Vucenic",    result: "W", method: "SUB (Guillotine)", event: "UFC Fight Night London", round: 2, date: "Mar 22, 2025" },
+        { opponent: "Bolaji Oki",        result: "W", method: "SUB (Guillotine)", event: "UFC Fight Night Paris",  round: 1, date: "Sep 28, 2024" },
+        { opponent: "Manuel Torres",     result: "L", method: "SUB (RNC)",        event: "UFC Fight Night",        round: 1, date: "Feb 24, 2024" },
+      ],
+    },
+  },
+
+  // ── CO-MAIN ──────────────────────────────────────────────────────────────────
+  jandiroba: {
+    id: "jandiroba",
+    name: "Virna Jandiroba",
+    firstName: "Virna",
+    lastName: "Jandiroba",
+    nickname: "Carcará",
+    ranking: 3,
+    weightClass: "Women's Strawweight",
+    nationality: "🇧🇷",
+    imageUrls: [
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-10/JANDIROBA_VIRNA_L_10042025.png",
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-10/JANDIROBA_VIRNA_L_10052024.png",
+    ],
+    stats: {
+      age: 37, height: "5'5\"", weight: "115 lbs", reach: "64\"",
+      stance: "Orthodox", country: "Brazil", gym: "Fight Sports",
+      wins: 22, losses: 4, draws: 0,
+      sigStrikesLanded: 3.48, sigStrikesAbsorbed: 2.61,
+      sigStrikeAccuracy: 42, sigStrikeDefense: 63,
+      knockdownAvg: 0.05,
+      takedownAvg: 5.18, takedownAccuracy: 53, takedownDefense: 71, submissionAvg: 2.1,
+      koTkoWins: 0, submissionWins: 9, ufcKoLosses: 0, careerKoLosses: 0, knockdownsAbsorbed: 0,
+      winsAsFavorite: 7, lossesAsFavorite: 2, winsAsUnderdog: 4, lossesAsUnderdog: 2,
+      lastFights: [
+        { opponent: "Mackenzie Dern",  result: "L", method: "DEC (Unanimous)", event: "UFC 321",             round: 5, date: "Oct 4, 2025" },
+        { opponent: "Amanda Lemos",    result: "W", method: "DEC (Unanimous)", event: "UFC Fight Night",     round: 3, date: "Mar 22, 2025" },
+        { opponent: "Loopy Godinez",   result: "W", method: "SUB (Triangle)", event: "UFC Fight Night",     round: 2, date: "Sep 14, 2024" },
+        { opponent: "Tecia Pennington",result: "W", method: "DEC (Unanimous)", event: "UFC Fight Night",     round: 3, date: "Mar 30, 2024" },
+        { opponent: "Michelle Waterson",result:"W", method: "SUB (RNC)",       event: "UFC Fight Night",     round: 2, date: "Nov 11, 2023" },
+      ],
+    },
+  },
+
+  ricci: {
+    id: "ricci",
+    name: "Tabatha Ricci",
+    firstName: "Tabatha",
+    lastName: "Ricci",
+    nickname: "Baby Shark",
+    ranking: 11,
+    weightClass: "Women's Strawweight",
+    nationality: "🇧🇷",
+    imageUrls: [
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-07/RICCI_TABATHA_L_07122025.png",
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-11/RICCI_TABATHA_L_11232024.png",
+    ],
+    stats: {
+      age: 29, height: "5'6\"", weight: "115 lbs", reach: "66\"",
+      stance: "Orthodox", country: "Brazil", gym: "Xtreme Couture",
+      wins: 12, losses: 3, draws: 0,
+      sigStrikesLanded: 4.12, sigStrikesAbsorbed: 3.88,
+      sigStrikeAccuracy: 44, sigStrikeDefense: 57,
+      knockdownAvg: 0.12,
+      takedownAvg: 2.44, takedownAccuracy: 44, takedownDefense: 64, submissionAvg: 1.2,
+      koTkoWins: 2, submissionWins: 4, ufcKoLosses: 1, careerKoLosses: 1, knockdownsAbsorbed: 1,
+      winsAsFavorite: 5, lossesAsFavorite: 1, winsAsUnderdog: 3, lossesAsUnderdog: 2,
+      lastFights: [
+        { opponent: "Amanda Ribas",      result: "W", method: "TKO (Punches)",  event: "UFC Fight Night",  round: 2, date: "Jul 12, 2025" },
+        { opponent: "Xiaonan Yan",       result: "L", method: "DEC (Unanimous)",event: "UFC Fight Night",  round: 3, date: "Nov 23, 2024" },
+        { opponent: "Polyana Viana",     result: "W", method: "DEC (Unanimous)",event: "UFC Fight Night",  round: 3, date: "Mar 30, 2024" },
+        { opponent: "Angela Hill",       result: "W", method: "DEC (Unanimous)",event: "UFC Fight Night",  round: 3, date: "Feb 17, 2024" },
+        { opponent: "Randa Markos",      result: "W", method: "SUB (RNC)",      event: "UFC Fight Night",  round: 2, date: "Sep 9, 2023" },
+      ],
+    },
+  },
+
+  // ── MAIN CARD ────────────────────────────────────────────────────────────────
+  shahbazyan: {
+    id: "shahbazyan",
+    name: "Edmen Shahbazyan",
+    firstName: "Edmen",
+    lastName: "Shahbazyan",
+    nickname: "The Golden Boy",
+    weightClass: "Middleweight",
+    nationality: "🇺🇸",
+    imageUrls: [
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-09/SHAHBAZYAN_EDMEN_L_09272025.png",
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-12/SHAHBAZYAN_EDMEN_L_12142024.png",
+    ],
+    stats: {
+      age: 27, height: "6'1\"", weight: "185 lbs", reach: "75\"",
+      stance: "Orthodox", country: "USA", gym: "Team Shahbazyan",
+      wins: 12, losses: 4, draws: 0,
+      sigStrikesLanded: 5.32, sigStrikesAbsorbed: 3.71,
+      sigStrikeAccuracy: 56, sigStrikeDefense: 58,
+      knockdownAvg: 0.82,
+      takedownAvg: 0.55, takedownAccuracy: 50, takedownDefense: 80, submissionAvg: 0.6,
+      koTkoWins: 7, submissionWins: 3, ufcKoLosses: 1, careerKoLosses: 1, knockdownsAbsorbed: 2,
+      winsAsFavorite: 8, lossesAsFavorite: 1, winsAsUnderdog: 1, lossesAsUnderdog: 3,
+      lastFights: [
+        { opponent: "Chris Curtis",    result: "W", method: "KO (Punches)",    event: "UFC Fight Night", round: 1, date: "Sep 27, 2025" },
+        { opponent: "Gregory Rodrigues",result:"W", method: "KO (Punches)",   event: "UFC Fight Night", round: 2, date: "Dec 14, 2024" },
+        { opponent: "Chidi Njokuani",  result: "W", method: "TKO (Punches)",  event: "UFC Fight Night", round: 1, date: "Jun 1, 2024" },
+        { opponent: "Bruno Silva",     result: "L", method: "KO (Punches)",   event: "UFC Fight Night", round: 3, date: "Feb 3, 2024" },
+        { opponent: "Nassourdine Imavov",result:"L",method: "DEC (Unanimous)",event: "UFC Fight Night", round: 3, date: "Sep 16, 2023" },
+      ],
+    },
+  },
+
+  park: {
+    id: "park",
+    name: "JunYong Park",
+    firstName: "JunYong",
+    lastName: "Park",
+    nickname: "The Iron Turtle",
+    weightClass: "Middleweight",
+    nationality: "🇰🇷",
+    imageUrls: [
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-04/PARK_JUNYONG_L_04052025.png",
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-06/PARK_JUNYONG_L_06012024.png",
+    ],
+    stats: {
+      age: 34, height: "6'0\"", weight: "185 lbs", reach: "72\"",
+      stance: "Orthodox", country: "South Korea", gym: "MMA Corea",
+      wins: 16, losses: 6, draws: 0,
+      sigStrikesLanded: 3.85, sigStrikesAbsorbed: 3.42,
+      sigStrikeAccuracy: 45, sigStrikeDefense: 60,
+      knockdownAvg: 0.22,
+      takedownAvg: 2.80, takedownAccuracy: 46, takedownDefense: 72, submissionAvg: 0.8,
+      koTkoWins: 4, submissionWins: 6, ufcKoLosses: 1, careerKoLosses: 2, knockdownsAbsorbed: 1,
+      winsAsFavorite: 8, lossesAsFavorite: 2, winsAsUnderdog: 5, lossesAsUnderdog: 4,
+      lastFights: [
+        { opponent: "Cesar Almeida",   result: "L", method: "TKO (Punches)",  event: "UFC Fight Night", round: 1, date: "Apr 5, 2025" },
+        { opponent: "Philip Rowe",     result: "W", method: "DEC (Unanimous)",event: "UFC Fight Night", round: 3, date: "Jun 1, 2024" },
+        { opponent: "Andreas Michailidis",result:"W",method:"DEC (Unanimous)",event: "UFC Fight Night", round: 3, date: "Oct 14, 2023" },
+        { opponent: "Eryk Anders",     result: "W", method: "SUB (Guillotine)",event:"UFC Fight Night", round: 2, date: "Jun 10, 2023" },
+        { opponent: "AJ Dobson",       result: "W", method: "DEC (Unanimous)",event: "UFC Fight Night", round: 3, date: "Dec 3, 2022" },
+      ],
+    },
+  },
+
+  // ── PRELIMS ──────────────────────────────────────────────────────────────────
+  vannata: {
+    id: "vannata",
+    name: "Lando Vannata",
+    firstName: "Lando",
+    lastName: "Vannata",
+    nickname: "Groovy",
+    weightClass: "Lightweight",
+    nationality: "🇺🇸",
+    imageUrls: [
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2023-04/VANNATA_LANDO_L_04152023.png",
+    ],
+    stats: {
+      age: 33, height: "5'8\"", weight: "155 lbs", reach: "69\"",
+      stance: "Orthodox", country: "USA", gym: "Team Elevation",
+      wins: 12, losses: 7, draws: 2,
+      sigStrikesLanded: 5.88, sigStrikesAbsorbed: 5.62,
+      sigStrikeAccuracy: 47, sigStrikeDefense: 48,
+      knockdownAvg: 0.55,
+      takedownAvg: 0.82, takedownAccuracy: 38, takedownDefense: 58, submissionAvg: 0.9,
+      koTkoWins: 5, submissionWins: 4, ufcKoLosses: 2, careerKoLosses: 3, knockdownsAbsorbed: 3,
+      winsAsFavorite: 3, lossesAsFavorite: 2, winsAsUnderdog: 5, lossesAsUnderdog: 5,
+      lastFights: [
+        { opponent: "Daniel Zellhuber", result: "L", method: "DEC (Unanimous)",event: "UFC Fight Night", round: 3, date: "Apr 15, 2023" },
+        { opponent: "Charles Jourdain", result: "W", method: "TKO (Punches)",  event: "UFC Fight Night", round: 1, date: "Feb 25, 2023" },
+        { opponent: "Shane Burgos",     result: "L", method: "TKO (Punches)",  event: "UFC Fight Night", round: 3, date: "May 14, 2022" },
+        { opponent: "David Zawada",     result: "W", method: "KO (Head Kick)", event: "UFC Fight Night", round: 1, date: "Sep 25, 2021" },
+        { opponent: "Yancy Medeiros",   result: "W", method: "KO (Punches)",   event: "UFC Fight Night", round: 1, date: "Apr 10, 2021" },
+      ],
+    },
+  },
+
+  flowers: {
+    id: "flowers",
+    name: "Darrius Flowers",
+    firstName: "Darrius",
+    lastName: "Flowers",
+    nickname: "Beast Mode",
+    weightClass: "Lightweight",
+    nationality: "🇺🇸",
+    imageUrls: [
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-07/FLOWERS_DARRIUS_L_07132024.png",
+    ],
+    stats: {
+      age: 33, height: "5'10\"", weight: "155 lbs", reach: "73\"",
+      stance: "Southpaw", country: "USA", gym: "Roufusport",
+      wins: 12, losses: 8, draws: 1,
+      sigStrikesLanded: 3.72, sigStrikesAbsorbed: 4.18,
+      sigStrikeAccuracy: 39, sigStrikeDefense: 52,
+      knockdownAvg: 0.28,
+      takedownAvg: 1.10, takedownAccuracy: 40, takedownDefense: 61, submissionAvg: 0.5,
+      koTkoWins: 4, submissionWins: 3, ufcKoLosses: 0, careerKoLosses: 1, knockdownsAbsorbed: 2,
+      winsAsFavorite: 4, lossesAsFavorite: 3, winsAsUnderdog: 4, lossesAsUnderdog: 5,
+      lastFights: [
+        { opponent: "Evan Elder",       result: "L", method: "SUB (Arm Triangle)",event: "UFC Fight Night", round: 2, date: "Jul 13, 2024" },
+        { opponent: "Michael Johnson",  result: "L", method: "DEC (Unanimous)",   event: "UFC Fight Night", round: 3, date: "Feb 3, 2024" },
+        { opponent: "Ignacio Bahamondes",result:"L", method: "DEC (Unanimous)",   event: "UFC Fight Night", round: 3, date: "Sep 9, 2023" },
+        { opponent: "Christos Giagos",  result: "W", method: "DEC (Unanimous)",   event: "UFC Fight Night", round: 3, date: "Aug 6, 2022" },
+        { opponent: "Roosevelt Roberts",result: "W", method: "KO (Punches)",      event: "UFC Fight Night", round: 1, date: "May 21, 2022" },
+      ],
+    },
+  },
+
+  cowan: {
+    id: "cowan",
+    name: "Hailey Cowan",
+    firstName: "Hailey",
+    lastName: "Cowan",
+    weightClass: "Women's Bantamweight",
+    nationality: "🇺🇸",
+    imageUrls: [
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2026-03/COWAN_HAILEY_L_03222026.png",
+    ],
+    stats: {
+      age: 29, height: "5'8\"", weight: "135 lbs", reach: "68\"",
+      stance: "Orthodox", country: "USA", gym: "Elevation Fight Team",
+      wins: 8, losses: 3, draws: 0,
+      sigStrikesLanded: 4.45, sigStrikesAbsorbed: 3.92,
+      sigStrikeAccuracy: 46, sigStrikeDefense: 56,
+      knockdownAvg: 0.35,
+      takedownAvg: 1.20, takedownAccuracy: 42, takedownDefense: 65, submissionAvg: 0.5,
+      koTkoWins: 3, submissionWins: 2, ufcKoLosses: 1, careerKoLosses: 1, knockdownsAbsorbed: 1,
+      winsAsFavorite: 4, lossesAsFavorite: 1, winsAsUnderdog: 2, lossesAsUnderdog: 2,
+      lastFights: [
+        { opponent: "Macy Chiasson",   result: "W", method: "TKO (Punches)",  event: "UFC Fight Night", round: 2, date: "Nov 16, 2024" },
+        { opponent: "Pannie Kianzad",  result: "W", method: "DEC (Unanimous)",event: "UFC Fight Night", round: 3, date: "Jun 22, 2024" },
+        { opponent: "Ketlen Vieira",   result: "L", method: "DEC (Unanimous)",event: "UFC Fight Night", round: 3, date: "Feb 3, 2024" },
+        { opponent: "Sara McMann",     result: "W", method: "TKO (Punches)",  event: "UFC Fight Night", round: 1, date: "Oct 21, 2023" },
+        { opponent: "Tamires Vidal",   result: "W", method: "DEC (Split)",    event: "UFC Fight Night", round: 3, date: "Jul 1, 2023" },
+      ],
+    },
+  },
+
+  pereira_alice: {
+    id: "pereira_alice",
+    name: "Alice Pereira",
+    firstName: "Alice",
+    lastName: "Pereira",
+    weightClass: "Women's Bantamweight",
+    nationality: "🇧🇷",
+    imageUrls: [
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-11/PEREIRA_ALICE_L_11012025.png",
+    ],
+    stats: {
+      age: 30, height: "5'6\"", weight: "135 lbs", reach: "65\"",
+      stance: "Orthodox", country: "Brazil", gym: "Chute Boxe",
+      wins: 9, losses: 3, draws: 0,
+      sigStrikesLanded: 3.80, sigStrikesAbsorbed: 3.45,
+      sigStrikeAccuracy: 41, sigStrikeDefense: 57,
+      knockdownAvg: 0.20,
+      takedownAvg: 2.10, takedownAccuracy: 46, takedownDefense: 60, submissionAvg: 1.2,
+      koTkoWins: 2, submissionWins: 4, ufcKoLosses: 1, careerKoLosses: 1, knockdownsAbsorbed: 1,
+      winsAsFavorite: 3, lossesAsFavorite: 1, winsAsUnderdog: 4, lossesAsUnderdog: 2,
+      lastFights: [
+        { opponent: "Talia Santos",    result: "W", method: "DEC (Unanimous)", event: "UFC Fight Night", round: 3, date: "Nov 1, 2025" },
+        { opponent: "Nadia Kassem",    result: "W", method: "SUB (RNC)",       event: "UFC Fight Night", round: 2, date: "Jun 7, 2025" },
+        { opponent: "Julija Stoliarenko",result:"L",method: "SUB (Armbar)",    event: "UFC Fight Night", round: 1, date: "Nov 16, 2024" },
+        { opponent: "Vanessa Demopoulos",result:"W",method:"TKO (Punches)",   event: "UFC Fight Night", round: 2, date: "Jul 27, 2024" },
+        { opponent: "Shanna Young",    result: "W", method: "DEC (Unanimous)", event: "UFC Fight Night", round: 3, date: "Mar 16, 2024" },
       ],
     },
   },
 };
-
-// ─── Derived skill scores ─────────────────────────────────────────────────────
-
-export interface SkillScores {
-  boxing: number;
-  kickboxing: number;
-  grappling: number;
-  bjj: number;
-  durability: number;
-  standUpDefense: number; // 0-10
-}
-
-export function computeSkillScores(f: Fighter): SkillScores {
-  const s = f.stats;
-
-  // Boxing: KO wins, strike accuracy, volume, knockdown avg
-  const boxing = clamp(
-    4.0 +
-      s.koTkoWins * 0.6 +
-      (s.sigStrikeAccuracy > 45 ? 1.0 : s.sigStrikeAccuracy > 38 ? 0.5 : 0) +
-      (s.sigStrikesLanded > 4.5 ? 1.0 : s.sigStrikesLanded > 3.5 ? 0.5 : 0),
-    1, 10
-  );
-
-  // Kickboxing: striking volume, accuracy, defense, footwork proxy (volume + defense)
-  const kickboxing = clamp(
-    4.0 +
-      s.koTkoWins * 0.4 +
-      (s.sigStrikesLanded > 4.5 ? 1.2 : s.sigStrikesLanded > 3.5 ? 0.7 : 0) +
-      (s.sigStrikeDefense > 60 ? 1.0 : s.sigStrikeDefense > 50 ? 0.5 : 0) +
-      (s.sigStrikeAccuracy > 45 ? 0.5 : 0),
-    1, 10
-  );
-
-  // Grappling: TD volume, accuracy, defense
-  const grappling = clamp(
-    4.0 +
-      (s.takedownAvg > 3.0 ? 1.5 : s.takedownAvg > 2.0 ? 1.0 : s.takedownAvg > 1.0 ? 0.5 : 0) +
-      (s.takedownAccuracy > 50 ? 1.0 : s.takedownAccuracy > 40 ? 0.5 : 0) +
-      (s.takedownDefense > 70 ? 1.5 : s.takedownDefense > 55 ? 0.8 : 0),
-    1, 10
-  );
-
-  // BJJ: submission wins, sub avg, belt level (encoded in submissionWins as proxy)
-  const bjj = clamp(
-    3.5 +
-      s.submissionWins * 0.35 +
-      (s.submissionAvg > 2.0 ? 1.5 : s.submissionAvg > 1.0 ? 0.8 : 0),
-    1, 10
-  );
-
-  // Durability: UFC KO losses hurt the most, non-UFC less so, knockdowns and high absorption add risk
-  const durability = clamp(
-    8.5 -
-      s.ufcKoLosses * 1.3 -
-      (s.careerKoLosses - s.ufcKoLosses) * 0.4 -
-      s.knockdownsAbsorbed * 0.3 -
-      (s.sigStrikesAbsorbed > 4.5 ? 0.8 : s.sigStrikesAbsorbed > 3.5 ? 0.3 : 0),
-    1, 10
-  );
-
-  // Stand-up defense: lower SApM = better, high strike defense %
-  const standUpDefense = clamp(
-    10 -
-      (s.sigStrikesAbsorbed * 0.9) +
-      ((s.sigStrikeDefense - 50) * 0.05),
-    1, 10
-  );
-
-  return { boxing, kickboxing, grappling, bjj, durability, standUpDefense };
-}
-
-function clamp(val: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, Math.round(val * 10) / 10));
-}
-
-// ─── Recent form win probability ─────────────────────────────────────────────
-
-export function computeRecentFormScore(fights: FightRecord[]): number {
-  // Weighted: most recent fight has highest weight
-  const last5 = fights.slice(0, 5);
-  const weights = [5, 4, 3, 2, 1];
-  let weightedWins = 0;
-  let totalWeight = 0;
-  last5.forEach((f, i) => {
-    const w = weights[i] ?? 1;
-    totalWeight += w;
-    if (f.result === "W") weightedWins += w;
-  });
-  return totalWeight > 0 ? weightedWins / totalWeight : 0.5;
-}
-
-export function computeWinProbability(
-  f1: Fighter,
-  f2: Fighter
-): { prob1: number; prob2: number } {
-  const s1 = computeSkillScores(f1);
-  const s2 = computeSkillScores(f2);
-
-  const skillAvg1 =
-    (s1.boxing + s1.kickboxing + s1.grappling + s1.bjj + s1.durability) / 5;
-  const skillAvg2 =
-    (s2.boxing + s2.kickboxing + s2.grappling + s2.bjj + s2.durability) / 5;
-
-  const skillTotal = skillAvg1 + skillAvg2 || 1;
-  const skillProb1 = skillAvg1 / skillTotal;
-  const skillProb2 = skillAvg2 / skillTotal;
-
-  const form1 = computeRecentFormScore(f1.stats.lastFights);
-  const form2 = computeRecentFormScore(f2.stats.lastFights);
-  const formTotal = form1 + form2 || 1;
-  const formProb1 = form1 / formTotal;
-  const formProb2 = form2 / formTotal;
-
-  // 40% skill, 60% recent form
-  const raw1 = skillProb1 * 0.4 + formProb1 * 0.6;
-  const raw2 = skillProb2 * 0.4 + formProb2 * 0.6;
-  const rawTotal = raw1 + raw2;
-
-  return {
-    prob1: Math.round((raw1 / rawTotal) * 1000) / 10,
-    prob2: Math.round((raw2 / rawTotal) * 1000) / 10,
-  };
-}

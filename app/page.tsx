@@ -1,157 +1,89 @@
 import { EVENTS } from "@/data/events";
 import { FIGHTERS } from "@/data/fighters";
-import Link from "next/link";
-
-function FightCard({
-  fight,
-}: {
-  fight: (typeof EVENTS)[0]["fights"][0];
-}) {
-  const f1 = FIGHTERS[fight.fighter1Id];
-  const f2 = FIGHTERS[fight.fighter2Id];
-
-  if (!f1 || !f2) return null;
-
-  return (
-    <Link href={`/fight/${fight.id}`}>
-      <div className="group bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-gray-700 rounded-xl p-4 transition-all duration-200 cursor-pointer">
-        {/* Badges */}
-        <div className="flex items-center gap-2 mb-3">
-          {fight.isMainEvent && (
-            <span className="bg-red-600 text-white text-xs font-black uppercase px-2 py-0.5 rounded">
-              Main Event
-            </span>
-          )}
-          {fight.isCoMainEvent && (
-            <span className="bg-orange-600 text-white text-xs font-black uppercase px-2 py-0.5 rounded">
-              Co-Main
-            </span>
-          )}
-          {fight.isTitleFight && (
-            <span className="bg-yellow-600 text-black text-xs font-black uppercase px-2 py-0.5 rounded">
-              Title
-            </span>
-          )}
-          <span className="text-gray-500 text-xs uppercase tracking-wide">
-            {fight.weightClass}
-          </span>
-        </div>
-
-        {/* Fighters */}
-        <div className="grid grid-cols-3 items-center">
-          <div className="text-left">
-            {f1.ranking && (
-              <div className="text-red-500 text-xs font-bold mb-0.5">
-                #{f1.ranking}
-              </div>
-            )}
-            <div className="text-white font-black text-sm leading-tight">
-              {f1.firstName}
-            </div>
-            <div className="text-white font-black text-base leading-tight uppercase">
-              {f1.lastName}
-            </div>
-            <div className="text-gray-500 text-xs mt-1">
-              {f1.nationality} {f1.stats.wins}-{f1.stats.losses}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center">
-            <span className="text-gray-600 font-bold text-sm">vs</span>
-          </div>
-
-          <div className="text-right">
-            {f2.ranking && (
-              <div className="text-blue-500 text-xs font-bold mb-0.5">
-                #{f2.ranking}
-              </div>
-            )}
-            <div className="text-white font-black text-sm leading-tight">
-              {f2.firstName}
-            </div>
-            <div className="text-white font-black text-base leading-tight uppercase">
-              {f2.lastName}
-            </div>
-            <div className="text-gray-500 text-xs mt-1">
-              {f2.nationality} {f2.stats.wins}-{f2.stats.losses}
-            </div>
-          </div>
-        </div>
-
-        {/* View analysis CTA */}
-        <div className="mt-3 pt-3 border-t border-gray-800 flex items-center justify-between">
-          <span className="text-gray-500 text-xs">AI Analysis available</span>
-          <span className="text-red-500 text-xs font-bold group-hover:text-red-400 transition-colors">
-            View Breakdown →
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
-}
+import FightRow from "@/components/FightRow";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
-      <div className="bg-black border-b border-gray-900">
-        <div className="max-w-5xl mx-auto px-4 py-5 flex items-center justify-between">
+      <header className="border-b border-white/10">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-red-600 px-3 py-1.5 rounded">
-              <span className="text-white font-black text-xl tracking-wider">
-                UFC
-              </span>
+            <div className="bg-red-600 px-2.5 py-1 rounded text-white font-black text-lg tracking-wider">
+              UFC
             </div>
             <div>
-              <div className="text-white font-black text-lg">Fight Analyzer</div>
-              <div className="text-gray-500 text-xs">AI-powered breakdowns</div>
+              <div className="text-white font-bold text-base leading-none">Fight Analyzer</div>
+              <div className="text-gray-600 text-xs mt-0.5">AI · Odds · Stats</div>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Events */}
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
-        {EVENTS.map((event) => (
-          <div key={event.id}>
-            {/* Event header */}
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="bg-red-600 text-white text-xs font-black uppercase px-2 py-0.5 rounded">
-                    {event.shortName}
-                  </span>
-                  <span className="text-gray-400 text-sm font-medium">
-                    {event.date}
-                  </span>
-                </div>
-                <div className="text-white font-black text-xl">{event.name}</div>
-                <div className="text-gray-500 text-sm">
-                  {event.venue} · {event.location}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-gray-500 text-xs">{event.broadcast}</div>
-              </div>
-            </div>
+      <main className="max-w-4xl mx-auto px-4 py-8 space-y-10">
+        {EVENTS.map((event) => {
+          const mainCard = event.fights.filter((f) => f.isMainCard);
+          const prelims = event.fights.filter((f) => !f.isMainCard);
 
-            {/* Fights */}
-            {event.fights.length > 0 ? (
-              <div className="space-y-3">
-                {event.fights.map((fight) => (
-                  <FightCard key={fight.id} fight={fight} />
-                ))}
-              </div>
-            ) : (
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
-                <div className="text-gray-500 text-sm">
-                  Fight card to be announced
+          return (
+            <section key={event.id}>
+              {/* Event header */}
+              <div className="flex items-end justify-between mb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-red-600 text-white text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded">
+                      {event.shortName}
+                    </span>
+                    <span className="text-gray-500 text-sm">{event.date}</span>
+                  </div>
+                  <h2 className="text-white font-black text-2xl leading-tight">{event.name}</h2>
+                  <p className="text-gray-600 text-sm mt-0.5">
+                    {event.venue} · {event.location}
+                  </p>
                 </div>
+                <span className="text-gray-600 text-xs">{event.broadcast}</span>
               </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </main>
+
+              {event.fights.length === 0 ? (
+                <div className="rounded-xl border border-white/5 bg-white/[0.02] px-5 py-8 text-center text-gray-600 text-sm">
+                  Card to be announced
+                </div>
+              ) : (
+                <div className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
+                  {mainCard.length > 0 && (
+                    <>
+                      <div className="px-5 py-2 bg-white/[0.03] flex items-center gap-2 border-b border-white/5">
+                        <span className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">Main Card</span>
+                        <span className="text-gray-700 text-[10px]">·</span>
+                        <span className="text-gray-600 text-[10px]">{event.broadcast}</span>
+                      </div>
+                      {mainCard.map((f) => {
+                        const f1 = FIGHTERS[f.fighter1Id];
+                        const f2 = FIGHTERS[f.fighter2Id];
+                        if (!f1 || !f2) return null;
+                        return <FightRow key={f.id} fight={f} fighter1={f1} fighter2={f2} />;
+                      })}
+                    </>
+                  )}
+                  {prelims.length > 0 && (
+                    <>
+                      <div className="px-5 py-2 bg-white/[0.02] flex items-center gap-2 border-b border-white/5 border-t border-white/5">
+                        <span className="text-gray-600 text-[10px] font-black uppercase tracking-[0.2em]">Prelims</span>
+                      </div>
+                      {prelims.map((f) => {
+                        const f1 = FIGHTERS[f.fighter1Id];
+                        const f2 = FIGHTERS[f.fighter2Id];
+                        if (!f1 || !f2) return null;
+                        return <FightRow key={f.id} fight={f} fighter1={f1} fighter2={f2} />;
+                      })}
+                    </>
+                  )}
+                </div>
+              )}
+            </section>
+          );
+        })}
+      </main>
+    </div>
   );
 }

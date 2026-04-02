@@ -1,5 +1,5 @@
 export interface BettingOdds {
-  fighter1American: number; // e.g. +145 or -175
+  fighter1American: number;
   fighter2American: number;
   sportsbook: string;
 }
@@ -16,6 +16,7 @@ export interface Fight {
   fighter1Ranking?: number;
   fighter2Ranking?: number;
   odds?: BettingOdds;
+  isMainCard: boolean;
 }
 
 export interface FightNight {
@@ -33,7 +34,7 @@ export const EVENTS: FightNight[] = [
   {
     id: "ufc-fight-night-272",
     name: "UFC Fight Night: Moicano vs. Duncan",
-    shortName: "Fight Night",
+    shortName: "UFC Vegas 115",
     date: "April 5, 2026",
     venue: "Meta APEX",
     location: "Las Vegas, NV",
@@ -48,10 +49,72 @@ export const EVENTS: FightNight[] = [
         isCoMainEvent: false,
         isTitleFight: false,
         fighter1Ranking: 10,
-        fighter2Ranking: undefined,
+        isMainCard: true,
         odds: {
-          fighter1American: +145,  // Moicano underdog
-          fighter2American: -175,  // Duncan favorite
+          fighter1American: +145,
+          fighter2American: -175,
+          sportsbook: "DraftKings",
+        },
+      },
+      {
+        id: "jandiroba-ricci",
+        fighter1Id: "jandiroba",
+        fighter2Id: "ricci",
+        weightClass: "Women's Strawweight",
+        isMainEvent: false,
+        isCoMainEvent: true,
+        isTitleFight: false,
+        fighter1Ranking: 3,
+        fighter2Ranking: 11,
+        isMainCard: true,
+        odds: {
+          fighter1American: -160,
+          fighter2American: +130,
+          sportsbook: "DraftKings",
+        },
+      },
+      {
+        id: "shahbazyan-park",
+        fighter1Id: "shahbazyan",
+        fighter2Id: "park",
+        weightClass: "Middleweight",
+        isMainEvent: false,
+        isCoMainEvent: false,
+        isTitleFight: false,
+        isMainCard: true,
+        odds: {
+          fighter1American: -145,
+          fighter2American: +120,
+          sportsbook: "DraftKings",
+        },
+      },
+      {
+        id: "vannata-flowers",
+        fighter1Id: "vannata",
+        fighter2Id: "flowers",
+        weightClass: "Lightweight",
+        isMainEvent: false,
+        isCoMainEvent: false,
+        isTitleFight: false,
+        isMainCard: false,
+        odds: {
+          fighter1American: -130,
+          fighter2American: +108,
+          sportsbook: "DraftKings",
+        },
+      },
+      {
+        id: "cowan-pereira",
+        fighter1Id: "cowan",
+        fighter2Id: "pereira_alice",
+        weightClass: "Women's Bantamweight",
+        isMainEvent: false,
+        isCoMainEvent: false,
+        isTitleFight: false,
+        isMainCard: false,
+        odds: {
+          fighter1American: -155,
+          fighter2American: +128,
           sportsbook: "DraftKings",
         },
       },
