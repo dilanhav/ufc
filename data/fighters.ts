@@ -8,7 +8,6 @@ export interface FightRecord {
 }
 
 export interface FighterStats {
-  // Tale of the tape
   age: number;
   height: string;
   weight: string;
@@ -17,38 +16,29 @@ export interface FighterStats {
   country: string;
   gym: string;
 
-  // Record
   wins: number;
   losses: number;
   draws: number;
-  noContests: number;
 
-  // Striking
-  sigStrikesLanded: number;   // per min
-  sigStrikesAbsorbed: number; // per min
-  sigStrikeAccuracy: number;  // %
-  sigStrikeDefense: number;   // %
-  knockdownAvg: number;       // per 15 min
+  sigStrikesLanded: number;
+  sigStrikesAbsorbed: number;
+  sigStrikeAccuracy: number;
+  sigStrikeDefense: number;
 
-  // Grappling
-  takedownAvg: number;        // per 15 min
-  takedownAccuracy: number;   // %
-  takedownDefense: number;    // %
-  submissionAvg: number;      // per 15 min
+  takedownAvg: number;
+  takedownAccuracy: number;
+  takedownDefense: number;
+  submissionAvg: number;
 
-  // Durability
-  avgFightTime: string;       // mm:ss
-  finishRate: number;         // % of wins by finish
-  knockoutLosses: number;
-  submissionLosses: number;
+  avgFightTime: string;
+  finishRate: number;
 
-  // Computed advantages (0-10)
+  // Skill scores (0–10), used to compute win probability
   boxing: number;
   kickboxing: number;
   grappling: number;
   bjj: number;
   durability: number;
-  winRate: number;
 
   lastFights: FightRecord[];
 }
@@ -61,8 +51,9 @@ export interface Fighter {
   nickname?: string;
   ranking?: number;
   weightClass: string;
-  imageUrl?: string;
   nationality: string;
+  // Full-body cutout image from UFC CDN
+  imageUrl?: string;
   stats: FighterStats;
 }
 
@@ -73,108 +64,176 @@ export const FIGHTERS: Record<string, Fighter> = {
     firstName: "Renato",
     lastName: "Moicano",
     nickname: "Money",
-    ranking: 7,
+    ranking: 10,
     weightClass: "Lightweight",
     nationality: "🇧🇷",
+    imageUrl:
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-01/MOICANO_RENATO_L_01112025.png",
     stats: {
-      age: 32,
+      age: 36,
       height: "5'11\"",
       weight: "155 lbs",
-      reach: "74\"",
+      reach: "75\"",
       stance: "Orthodox",
       country: "Brazil",
-      gym: "Team Alpha Male / Evolve MMA",
+      gym: "Evolve MMA",
 
-      wins: 21,
-      losses: 5,
+      wins: 20,
+      losses: 7,
       draws: 1,
-      noContests: 1,
 
-      sigStrikesLanded: 5.42,
-      sigStrikesAbsorbed: 3.81,
-      sigStrikeAccuracy: 47,
-      sigStrikeDefense: 60,
-      knockdownAvg: 0.44,
+      // Source: UFCStats
+      sigStrikesLanded: 2.14,
+      sigStrikesAbsorbed: 2.42,
+      sigStrikeAccuracy: 37,
+      sigStrikeDefense: 63,
 
-      takedownAvg: 1.22,
-      takedownAccuracy: 48,
-      takedownDefense: 82,
+      takedownAvg: 2.98,
+      takedownAccuracy: 44,
+      takedownDefense: 73,
       submissionAvg: 1.4,
 
-      avgFightTime: "11:24",
-      finishRate: 76,
-      knockoutLosses: 1,
-      submissionLosses: 2,
+      avgFightTime: "8:22",
+      finishRate: 70,
 
-      boxing: 7.2,
-      kickboxing: 6.8,
-      grappling: 8.5,
-      bjj: 9.1,
-      durability: 7.0,
-      winRate: 80.8,
+      // AI skill scores derived from career stats
+      boxing: 6.5,
+      kickboxing: 7.2,
+      grappling: 7.8,
+      bjj: 9.0,
+      durability: 6.5,
 
       lastFights: [
-        { opponent: "Islam Makhachev", result: "L", method: "SUB (RNC)", event: "UFC 311", round: 2, date: "Jan 18, 2025" },
-        { opponent: "Arman Tsarukyan", result: "W", method: "KO (Punches)", event: "UFC 311", round: 2, date: "Jan 18, 2025" },
-        { opponent: "Beneil Dariush", result: "W", method: "DEC (Unanimous)", event: "UFC 310", round: 3, date: "Dec 7, 2024" },
-        { opponent: "Drew Dober", result: "W", method: "SUB (Guillotine)", event: "UFC Fight Night", round: 1, date: "Mar 9, 2024" },
-        { opponent: "Brad Riddell", result: "W", method: "DEC (Unanimous)", event: "UFC Fight Night", round: 3, date: "Sep 16, 2023" },
+        {
+          opponent: "Beneil Dariush",
+          result: "L",
+          method: "DEC (Unanimous)",
+          event: "UFC 317",
+          round: 3,
+          date: "Jun 28, 2025",
+        },
+        {
+          opponent: "Islam Makhachev",
+          result: "L",
+          method: "SUB (RNC)",
+          event: "UFC 311",
+          round: 1,
+          date: "Jan 18, 2025",
+        },
+        {
+          opponent: "Benoit Saint-Denis",
+          result: "W",
+          method: "KO (Doctor Stoppage)",
+          event: "UFC Fight Night Paris",
+          round: 2,
+          date: "Sep 28, 2024",
+        },
+        {
+          opponent: "Jalin Turner",
+          result: "W",
+          method: "KO (Punches)",
+          event: "UFC 300",
+          round: 2,
+          date: "Apr 13, 2024",
+        },
+        {
+          opponent: "Drew Dober",
+          result: "W",
+          method: "DEC (Unanimous)",
+          event: "UFC Fight Night",
+          round: 3,
+          date: "Feb 3, 2024",
+        },
       ],
     },
   },
 
   duncan: {
     id: "duncan",
-    name: "Michael Duncan",
-    firstName: "Michael",
+    name: "Chris Duncan",
+    firstName: "Chris",
     lastName: "Duncan",
-    nickname: "Maverick",
+    nickname: "The Problem",
     ranking: undefined,
     weightClass: "Lightweight",
-    nationality: "🇺🇸",
+    nationality: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+    imageUrl:
+      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-03/DUNCAN_CHRIS_L_03222025.png",
     stats: {
-      age: 30,
-      height: "6'1\"",
+      age: 32,
+      height: "5'10\"",
       weight: "155 lbs",
-      reach: "75\"",
-      stance: "Southpaw",
-      country: "USA",
+      reach: "72\"",
+      stance: "Orthodox",
+      country: "Scotland",
       gym: "American Top Team",
 
-      wins: 12,
-      losses: 3,
+      wins: 15,
+      losses: 2,
       draws: 0,
-      noContests: 0,
 
-      sigStrikesLanded: 4.88,
-      sigStrikesAbsorbed: 4.12,
-      sigStrikeAccuracy: 44,
-      sigStrikeDefense: 55,
-      knockdownAvg: 0.62,
+      // Estimated from UFCStats patterns; exact figures unavailable via public scrape
+      sigStrikesLanded: 3.62,
+      sigStrikesAbsorbed: 3.95,
+      sigStrikeAccuracy: 43,
+      sigStrikeDefense: 53,
 
-      takedownAvg: 2.14,
-      takedownAccuracy: 52,
-      takedownDefense: 61,
-      submissionAvg: 0.5,
+      takedownAvg: 2.10,
+      takedownAccuracy: 48,
+      takedownDefense: 58,
+      submissionAvg: 2.8,
 
-      avgFightTime: "9:48",
-      finishRate: 83,
-      knockoutLosses: 2,
-      submissionLosses: 0,
+      avgFightTime: "7:05",
+      finishRate: 87,
 
-      boxing: 7.8,
-      kickboxing: 7.5,
-      grappling: 6.2,
-      bjj: 5.4,
-      durability: 6.1,
-      winRate: 80.0,
+      // AI skill scores
+      boxing: 6.8,
+      kickboxing: 6.4,
+      grappling: 7.2,
+      bjj: 7.5,
+      durability: 6.0,
 
       lastFights: [
-        { opponent: "Ricky Glenn", result: "W", method: "TKO (Punches)", event: "UFC Fight Night", round: 2, date: "Nov 16, 2024" },
-        { opponent: "Viacheslav Borshchev", result: "W", method: "KO (Head Kick)", event: "UFC 305", round: 1, date: "Aug 17, 2024" },
-        { opponent: "Ignacio Bahamondes", result: "L", method: "DEC (Split)", event: "UFC Fight Night", round: 3, date: "Apr 6, 2024" },
-        { opponent: "Marc Diakiese", result: "W", method: "TKO (Punches)", event: "UFC Fight Night", round: 1, date: "Nov 18, 2023" },
-        { opponent: "Esteban Ribovics", result: "W", method: "DEC (Unanimous)", event: "UFC Fight Night", round: 3, date: "Aug 5, 2023" },
+        {
+          opponent: "Terrance McKinney",
+          result: "W",
+          method: "SUB (Anaconda)",
+          event: "UFC 323",
+          round: 1,
+          date: "Dec 6, 2025",
+        },
+        {
+          opponent: "Jordan Vucenic",
+          result: "W",
+          method: "SUB (Guillotine)",
+          event: "UFC Fight Night London",
+          round: 2,
+          date: "Mar 22, 2025",
+        },
+        {
+          opponent: "Bolaji Oki",
+          result: "W",
+          method: "SUB (Guillotine)",
+          event: "UFC Fight Night Paris",
+          round: 1,
+          date: "Sep 28, 2024",
+        },
+        {
+          opponent: "Manuel Torres",
+          result: "L",
+          method: "SUB (RNC)",
+          event: "UFC Fight Night",
+          round: 1,
+          date: "Feb 24, 2024",
+        },
+        {
+          opponent: "Yanal Ashmouz",
+          result: "W",
+          method: "DEC (Unanimous)",
+          event: "UFC Fight Night London",
+          round: 3,
+          date: "Jul 22, 2023",
+        },
       ],
     },
   },
