@@ -1,6 +1,6 @@
 "use client";
 
-import { Fighter } from "@/data/fighters";
+import { Fighter, computeSkillScores, computeWinProbability } from "@/data/fighters";
 import AdvantageBar from "./AdvantageBar";
 
 interface StatsComparisonProps {
@@ -8,27 +8,64 @@ interface StatsComparisonProps {
   fighter2: Fighter;
 }
 
-export default function StatsComparison({
-  fighter1,
-  fighter2,
-}: StatsComparisonProps) {
-  const s1 = fighter1.stats;
-  const s2 = fighter2.stats;
+export default function StatsComparison({ fighter1, fighter2 }: StatsComparisonProps) {
+  const s1 = computeSkillScores(fighter1);
+  const s2 = computeSkillScores(fighter2);
+  const { prob1, prob2 } = computeWinProbability(fighter1, fighter2);
+
+  const f1 = fighter1.stats;
+  const f2 = fighter2.stats;
 
   const categories = [
-    { label: "Boxing",     icon: "🥊", val1: s1.boxing,     val2: s2.boxing },
-    { label: "Kickboxing", icon: "🦵", val1: s1.kickboxing, val2: s2.kickboxing },
-    { label: "Grappling",  icon: "🤼", val1: s1.grappling,  val2: s2.grappling },
-    { label: "BJJ",        icon: "🥋", val1: s1.bjj,        val2: s2.bjj },
-    { label: "Durability", icon: "🛡️", val1: s1.durability, val2: s2.durability },
+    {
+      label: "Boxing",
+      icon: "🥊",
+      val1: s1.boxing,
+      val2: s2.boxing,
+      sub1: `${f1.koTkoWins} KO/TKO wins`,
+      sub2: `${f2.koTkoWins} KO/TKO wins`,
+    },
+    {
+      label: "Kickboxing",
+      icon: "🦵",
+      val1: s1.kickboxing,
+      val2: s2.kickboxing,
+      sub1: `${f1.sigStrikesLanded} SLpM`,
+      sub2: `${f2.sigStrikesLanded} SLpM`,
+    },
+    {
+      label: "Grappling",
+      icon: "🤼",
+      val1: s1.grappling,
+      val2: s2.grappling,
+      sub1: `${f1.takedownAvg} TD/15min`,
+      sub2: `${f2.takedownAvg} TD/15min`,
+    },
+    {
+      label: "BJJ",
+      icon: "🥋",
+      val1: s1.bjj,
+      val2: s2.bjj,
+      sub1: `${f1.submissionWins} sub wins`,
+      sub2: `${f2.submissionWins} sub wins`,
+    },
+    {
+      label: "Durability",
+      icon: "🛡️",
+      val1: s1.durability,
+      val2: s2.durability,
+      sub1: `${f1.ufcKoLosses} UFC KO losses`,
+      sub2: `${f2.ufcKoLosses} UFC KO losses`,
+    },
+    {
+      label: "Stand-up Defense",
+      icon: "🪃",
+      val1: s1.standUpDefense,
+      val2: s2.standUpDefense,
+      sub1: `${f1.sigStrikesAbsorbed} SApM`,
+      sub2: `${f2.sigStrikesAbsorbed} SApM`,
+    },
   ];
-
-  // Win probability: weighted composite of all skill scores, normalized to 100%
-  const score1 = categories.reduce((sum, c) => sum + c.val1, 0);
-  const score2 = categories.reduce((sum, c) => sum + c.val2, 0);
-  const total = score1 + score2 || 1;
-  const winProb1 = (score1 / total) * 100;
-  const winProb2 = (score2 / total) * 100;
 
   return (
     <div className="bg-gray-950 rounded-2xl overflow-hidden border border-gray-800">
@@ -41,8 +78,8 @@ export default function StatsComparison({
         <div className="h-px flex-1 bg-red-600" />
       </div>
 
-      {/* Fighter color legend */}
-      <div className="flex justify-between px-6 pt-4 pb-2">
+      {/* Legend */}
+      <div className="flex justify-between px-6 pt-4 pb-1">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-red-500" />
           <span className="text-sm text-white font-bold">
@@ -59,60 +96,51 @@ export default function StatsComparison({
 
       <div className="px-6 pt-2 pb-4">
         {categories.map((cat) => (
-          <AdvantageBar
-            key={cat.label}
-            label={cat.label}
-            icon={cat.icon}
-            val1={cat.val1}
-            val2={cat.val2}
-            name1={fighter1.lastName}
-            name2={fighter2.lastName}
-          />
+          <div key={cat.label} className="mb-1">
+            <div className="flex justify-between text-xs text-gray-600 mb-0.5 px-0.5">
+              <span>{cat.sub1}</span>
+              <span>{cat.sub2}</span>
+            </div>
+            <AdvantageBar
+              label={cat.label}
+              icon={cat.icon}
+              val1={cat.val1}
+              val2={cat.val2}
+              name1={fighter1.lastName}
+              name2={fighter2.lastName}
+            />
+          </div>
         ))}
 
         {/* Win Probability */}
         <div className="mt-2 pt-4 border-t border-gray-800">
           <div className="text-xs text-gray-500 uppercase tracking-widest text-center mb-3 font-bold">
-            AI Win Probability
+            AI Win Probability · Weighted by Recent Form
           </div>
           <div className="flex justify-between items-center mb-3">
             <div className="text-center">
               <div className="text-4xl font-black text-red-400">
-                {winProb1.toFixed(1)}
+                {prob1}
                 <span className="text-xl text-gray-500">%</span>
               </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {fighter1.lastName}
-              </div>
+              <div className="text-xs text-gray-500 mt-1">{fighter1.lastName}</div>
             </div>
-
             <div className="text-gray-700 font-black text-sm">vs</div>
-
             <div className="text-center">
               <div className="text-4xl font-black text-blue-400">
-                {winProb2.toFixed(1)}
+                {prob2}
                 <span className="text-xl text-gray-500">%</span>
               </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {fighter2.lastName}
-              </div>
+              <div className="text-xs text-gray-500 mt-1">{fighter2.lastName}</div>
             </div>
           </div>
-
-          {/* Probability bar */}
           <div className="flex h-3 rounded-full overflow-hidden bg-gray-900">
-            <div
-              className="h-full bg-gradient-to-r from-red-700 to-red-500"
-              style={{ width: `${winProb1}%` }}
-            />
-            <div
-              className="h-full bg-gradient-to-l from-blue-700 to-blue-500"
-              style={{ width: `${winProb2}%` }}
-            />
+            <div className="h-full bg-gradient-to-r from-red-700 to-red-500" style={{ width: `${prob1}%` }} />
+            <div className="h-full bg-gradient-to-l from-blue-700 to-blue-500" style={{ width: `${prob2}%` }} />
           </div>
           <div className="flex justify-between mt-1">
-            <span className="text-xs text-gray-600">{s1.wins}W-{s1.losses}L career</span>
-            <span className="text-xs text-gray-600">{s2.wins}W-{s2.losses}L career</span>
+            <span className="text-xs text-gray-600">{fighter1.stats.wins}W-{fighter1.stats.losses}L career</span>
+            <span className="text-xs text-gray-600">{fighter2.stats.wins}W-{fighter2.stats.losses}L career</span>
           </div>
         </div>
       </div>

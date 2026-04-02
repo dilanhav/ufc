@@ -1,3 +1,9 @@
+export interface BettingOdds {
+  fighter1American: number; // e.g. +145 or -175
+  fighter2American: number;
+  sportsbook: string;
+}
+
 export interface Fight {
   id: string;
   fighter1Id: string;
@@ -9,6 +15,7 @@ export interface Fight {
   titleType?: "Undisputed" | "Interim";
   fighter1Ranking?: number;
   fighter2Ranking?: number;
+  odds?: BettingOdds;
 }
 
 export interface FightNight {
@@ -42,6 +49,11 @@ export const EVENTS: FightNight[] = [
         isTitleFight: false,
         fighter1Ranking: 10,
         fighter2Ranking: undefined,
+        odds: {
+          fighter1American: +145,  // Moicano underdog
+          fighter2American: -175,  // Duncan favorite
+          sportsbook: "DraftKings",
+        },
       },
     ],
   },
