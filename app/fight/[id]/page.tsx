@@ -4,6 +4,7 @@ import TaleOfTape from "@/components/TaleOfTape";
 import StatsComparison from "@/components/StatsComparison";
 import FightHistory from "@/components/FightHistory";
 import BettingOdds from "@/components/BettingOdds";
+import FightHero from "@/components/FightHero";
 import Link from "next/link";
 
 interface Props {
@@ -42,75 +43,31 @@ export default async function FightPage({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-black">
-      {/* Nav */}
-      <div className="bg-black border-b border-gray-900 sticky top-0 z-10">
+      {/* Sticky nav */}
+      <div className="bg-black/80 backdrop-blur-sm border-b border-white/5 sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-4">
           <Link href="/" className="text-gray-400 hover:text-white text-sm transition-colors">
             ← Events
           </Link>
           <div className="h-4 w-px bg-gray-800" />
-          <span className="text-gray-500 text-sm">{event.name}</span>
-          <span className="text-gray-700 text-sm">·</span>
-          <span className="text-gray-500 text-sm">{event.date}</span>
+          <span className="text-gray-500 text-sm truncate">{event.name}</span>
+          <span className="text-gray-700 text-sm hidden sm:block">·</span>
+          <span className="text-gray-500 text-sm hidden sm:block">{event.date}</span>
         </div>
       </div>
 
-      {/* Hero */}
-      <div className="bg-gradient-to-b from-gray-900 to-black">
-        <div className="max-w-5xl mx-auto px-4 py-8">
-          <div className="text-center mb-4">
-            {fight.isTitleFight && (
-              <span className="inline-block bg-yellow-600 text-black text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3">
-                {fight.titleType} Title Fight
-              </span>
-            )}
-            {fight.isMainEvent && (
-              <span className="inline-block bg-red-700 text-white text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3 ml-2">
-                Main Event
-              </span>
-            )}
-            <div className="text-red-600 text-xs font-black uppercase tracking-[0.3em]">
-              {fight.weightClass} · {event.date} · {event.venue}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 items-center gap-4 mt-4">
-            <div className="text-right">
-              {fighter1.ranking && (
-                <div className="text-red-500 text-sm font-bold mb-1">#{fighter1.ranking} Ranked</div>
-              )}
-              <div className="text-white font-black text-2xl md:text-4xl leading-tight uppercase">
-                {fighter1.firstName}
-              </div>
-              <div className="text-red-500 font-black text-3xl md:text-5xl leading-tight uppercase">
-                {fighter1.lastName}
-              </div>
-              <div className="text-gray-400 text-sm mt-1">{fighter1.nationality} {fighter1.stats.country}</div>
-              <div className="text-gray-500 text-xs mt-0.5">{fighter1.stats.wins}W · {fighter1.stats.losses}L</div>
-            </div>
-
-            <div className="flex flex-col items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-gray-900 border border-gray-700 flex items-center justify-center">
-                <span className="text-gray-400 font-black text-xl">VS</span>
-              </div>
-            </div>
-
-            <div className="text-left">
-              {fighter2.ranking && (
-                <div className="text-blue-500 text-sm font-bold mb-1">#{fighter2.ranking} Ranked</div>
-              )}
-              <div className="text-white font-black text-2xl md:text-4xl leading-tight uppercase">
-                {fighter2.firstName}
-              </div>
-              <div className="text-blue-400 font-black text-3xl md:text-5xl leading-tight uppercase">
-                {fighter2.lastName}
-              </div>
-              <div className="text-gray-400 text-sm mt-1">{fighter2.nationality} {fighter2.stats.country}</div>
-              <div className="text-gray-500 text-xs mt-0.5">{fighter2.stats.wins}W · {fighter2.stats.losses}L</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Scroll-fade hero with fighter faces */}
+      <FightHero
+        fighter1={fighter1}
+        fighter2={fighter2}
+        weightClass={fight.weightClass}
+        isMainEvent={fight.isMainEvent}
+        isCoMainEvent={fight.isCoMainEvent}
+        isTitleFight={fight.isTitleFight}
+        titleType={fight.titleType}
+        eventDate={event.date}
+        eventVenue={event.venue}
+      />
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
