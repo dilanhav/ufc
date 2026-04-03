@@ -71,7 +71,7 @@ function clamp(v: number, min = 1, max = 10) {
 function cdnUrls(last: string, first: string, dates: string[]): string[] {
   return dates.map(
     (d) =>
-      `https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/${d}/${last}_${first}_L_${d.replace("-", "")}.png`
+      `https://ufc.com/images/styles/athlete_bio_full_body/s3/${d}/${last}_${first}_L_${d.replace("-", "")}.png`
   );
 }
 
@@ -196,9 +196,9 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Lightweight",
     nationality: "🇧🇷",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-06/MOICANO_RENATO_L_06282025.png",
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-01/MOICANO_RENATO_L_01182025.png",
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-09/MOICANO_RENATO_L_09282024.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/MOICANO_RENATO_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-06/MOICANO_RENATO_L_06-28.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-01/MOICANO_RENATO_L_01-18.png",
     ],
     stats: {
       age: 36, height: "5'11\"", weight: "155 lbs", reach: "75\"",
@@ -229,9 +229,9 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Lightweight",
     nationality: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-12/DUNCAN_CHRIS_L_12062025.png",
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-08/DUNCAN_CHRIS_L_08022025.png",
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-03/DUNCAN_CHRIS_L_03222025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/DUNCAN_CHRIS_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-12/DUNCAN_CHRIS_L_12-06.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-08/DUNCAN_CHRIS_L_08-02.png",
     ],
     stats: {
       age: 32, height: "5'10\"", weight: "155 lbs", reach: "72\"",
@@ -264,8 +264,9 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Women's Strawweight",
     nationality: "🇧🇷",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-10/JANDIROBA_VIRNA_L_10042025.png",
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-10/JANDIROBA_VIRNA_L_10052024.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/JANDIROBA_VIRNA_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-10/JANDIROBA_VIRNA_L_10-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2024-10/JANDIROBA_VIRNA_L_10-05.png",
     ],
     stats: {
       age: 37, height: "5'5\"", weight: "115 lbs", reach: "64\"",
@@ -297,8 +298,9 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Women's Strawweight",
     nationality: "🇧🇷",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-07/RICCI_TABATHA_L_07122025.png",
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-11/RICCI_TABATHA_L_11232024.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/RICCI_TABATHA_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-07/RICCI_TABATHA_L_07-12.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2024-11/RICCI_TABATHA_L_11-23.png",
     ],
     stats: {
       age: 29, height: "5'6\"", weight: "115 lbs", reach: "66\"",
@@ -330,8 +332,8 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Middleweight",
     nationality: "🇺🇸",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-09/SHAHBAZYAN_EDMEN_L_09272025.png",
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-12/SHAHBAZYAN_EDMEN_L_12142024.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-09/SHAHBAZYAN_EDMEN_L_09-27.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2024-12/SHAHBAZYAN_EDMEN_L_12-14.png",
     ],
     stats: {
       age: 27, height: "6'1\"", weight: "185 lbs", reach: "75\"",
@@ -362,8 +364,8 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Middleweight",
     nationality: "🇰🇷",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-04/PARK_JUNYONG_L_04052025.png",
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-06/PARK_JUNYONG_L_06012024.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-04/PARK_JUNYONG_L_04-05.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2024-06/PARK_JUNYONG_L_06-01.png",
     ],
     stats: {
       age: 34, height: "6'0\"", weight: "185 lbs", reach: "72\"",
@@ -395,7 +397,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Lightweight",
     nationality: "🇺🇸",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2023-04/VANNATA_LANDO_L_04152023.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2023-04/VANNATA_LANDO_L_04-15.png",
     ],
     stats: {
       age: 33, height: "5'8\"", weight: "155 lbs", reach: "69\"",
@@ -426,7 +428,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Lightweight",
     nationality: "🇺🇸",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-07/FLOWERS_DARRIUS_L_07132024.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2024-07/FLOWERS_DARRIUS_L_07-13.png",
     ],
     stats: {
       age: 33, height: "5'10\"", weight: "155 lbs", reach: "73\"",
@@ -456,7 +458,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Women's Bantamweight",
     nationality: "🇺🇸",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2026-03/COWAN_HAILEY_L_03222026.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-03/COWAN_HAILEY_L_03-22.png",
     ],
     stats: {
       age: 29, height: "5'8\"", weight: "135 lbs", reach: "68\"",
@@ -486,7 +488,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Women's Bantamweight",
     nationality: "🇧🇷",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-11/PEREIRA_ALICE_L_11012025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-11/PEREIRA_ALICE_L_11-01.png",
     ],
     stats: {
       age: 30, height: "5'6\"", weight: "135 lbs", reach: "65\"",
@@ -518,7 +520,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Light Heavyweight",
     nationality: "🇷🇺",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-11/YAKHYAEV_ABDULRAKHMAN_L_11012025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-11/YAKHYAEV_ABDULRAKHMAN_L_11-01.png",
     ],
     stats: {
       age: 25, height: "6'2\"", weight: "205 lbs", reach: "78\"",
@@ -549,7 +551,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Light Heavyweight",
     nationality: "🇧🇷",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-09/RIBEIRO_BRENDSON_L_09212024.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2024-09/RIBEIRO_BRENDSON_L_09-21.png",
     ],
     stats: {
       age: 32, height: "6'3\"", weight: "205 lbs", reach: "81\"",
@@ -580,7 +582,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Bantamweight",
     nationality: "🇺🇸",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-11/EWING_ETHYN_L_11012025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-11/EWING_ETHYN_L_11-01.png",
     ],
     stats: {
       age: 27, height: "5'9\"", weight: "135 lbs", reach: "72\"",
@@ -611,7 +613,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Bantamweight",
     nationality: "🇧🇷",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-08/ESTEVAM_RAFAEL_L_08302025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-08/ESTEVAM_RAFAEL_L_08-30.png",
     ],
     stats: {
       age: 26, height: "5'6\"", weight: "135 lbs", reach: "68\"",
@@ -641,7 +643,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Featherweight",
     nationality: "🇺🇸",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-09/MCMILLEN_TOMMY_L_09302025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-09/MCMILLEN_TOMMY_L_09-30.png",
     ],
     stats: {
       age: 28, height: "5'9\"", weight: "145 lbs", reach: "71\"",
@@ -671,7 +673,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Featherweight",
     nationality: "🇮🇹",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2023-09/ZECCHINI_MANOLO_L_09022023.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2023-09/ZECCHINI_MANOLO_L_09-02.png",
     ],
     stats: {
       age: 35, height: "5'9\"", weight: "145 lbs", reach: "70\"",
@@ -702,7 +704,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Featherweight",
     nationality: "🇧🇷",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2026-03/DELANO_JOSEMAURO_L_03212026.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-03/DELANO_JOSEMAURO_L_03-21.png",
     ],
     stats: {
       age: 30, height: "5'9\"", weight: "145 lbs", reach: "72\"",
@@ -732,7 +734,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Featherweight",
     nationality: "🇵🇱",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-10/RUCHALA_ROBERT_L_10252025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-10/RUCHALA_ROBERT_L_10-25.png",
     ],
     stats: {
       age: 28, height: "5'9\"", weight: "145 lbs", reach: "70\"",
@@ -762,7 +764,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Heavyweight",
     nationality: "🇧🇷",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-10/PAT_GUILHERME_L_10252025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-10/PAT_GUILHERME_L_10-25.png",
     ],
     stats: {
       age: 31, height: "6'2\"", weight: "265 lbs", reach: "76\"",
@@ -792,7 +794,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Heavyweight",
     nationality: "🇩🇰",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-07/PETERSEN_THOMAS_L_07132024.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2024-07/PETERSEN_THOMAS_L_07-13.png",
     ],
     stats: {
       age: 33, height: "6'5\"", weight: "265 lbs", reach: "82\"",
@@ -822,7 +824,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Flyweight",
     nationality: "🇧🇷",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-12/COSTA_ALESSANDRO_L_12062025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-12/COSTA_ALESSANDRO_L_12-06.png",
     ],
     stats: {
       age: 29, height: "5'6\"", weight: "125 lbs", reach: "67\"",
@@ -852,7 +854,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Flyweight",
     nationality: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-09/NICOLL_STEWART_L_09202025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-09/NICOLL_STEWART_L_09-20.png",
     ],
     stats: {
       age: 28, height: "5'5\"", weight: "125 lbs", reach: "66\"",
@@ -882,7 +884,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Middleweight",
     nationality: "🇷🇺",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-06/BEKOEV_AZAMAT_L_06282025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-06/BEKOEV_AZAMAT_L_06-28.png",
     ],
     stats: {
       age: 27, height: "6'1\"", weight: "185 lbs", reach: "76\"",
@@ -912,7 +914,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Middleweight",
     nationality: "🇺🇸",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2022-11/GORE_TRESEAN_L_11052022.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2022-11/GORE_TRESEAN_L_11-05.png",
     ],
     stats: {
       age: 28, height: "6'0\"", weight: "185 lbs", reach: "75\"",
@@ -942,7 +944,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Women's Flyweight",
     nationality: "🇧🇷",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2025-08/BARBOSA_DIONE_L_08302025.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-08/BARBOSA_DIONE_L_08-30.png",
     ],
     stats: {
       age: 30, height: "5'4\"", weight: "125 lbs", reach: "64\"",
@@ -972,7 +974,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Women's Flyweight",
     nationality: "🇨🇦",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2024-05/GATTO_MELISSA_L_05042024.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2024-05/GATTO_MELISSA_L_05-04.png",
     ],
     stats: {
       age: 32, height: "5'4\"", weight: "125 lbs", reach: "66\"",
@@ -1003,7 +1005,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Lightweight",
     nationality: "🇺🇸",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2021-07/KAMAKA_KAI_L_07102021.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2021-07/KAMAKA_KAI_L_07-10.png",
     ],
     stats: {
       age: 27, height: "5'10\"", weight: "155 lbs", reach: "72\"",
@@ -1033,7 +1035,7 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Lightweight",
     nationality: "🇺🇸",
     imageUrls: [
-      "https://dmxg5wxfqgde4.cloudfront.net/styles/athlete_bio_full_body/s3/2026-03/HOPE_DAKOTA_L_03212026.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-03/HOPE_DAKOTA_L_03-21.png",
     ],
     stats: {
       age: 26, height: "5'11\"", weight: "155 lbs", reach: "74\"",
