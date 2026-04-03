@@ -140,19 +140,50 @@ export function computeSkillScores(f: Fighter): SkillScores {
   return { boxing, kickboxing, grappling, bjj, durability, standUpDefense };
 }
 
-// ─── Recent-form win probability (60% weight) + skills (40%) ─────────────────
+// ─── Recent-form score ────────────────────────────────────────────────────────
+// Weights by recency, org level, and finish quality
+
+function orgWeight(event: string): number {
+  if (/^ufc/i.test(event)) return 1.0;                        // UFC = full weight
+  if (/rizin|pfl|one\s|bellator/i.test(event)) return 0.82;  // Major orgs
+  return 0.55;                                                  // Regional / unknown
+}
+
+function finishWeight(method: string, round: number): number {
+  const isFinish = /ko|tko|sub/i.test(method);
+  if (!isFinish) return 1.0;           // Decision
+  if (round === 1) return 1.45;        // First-round finish: elite danger
+  if (round === 2) return 1.25;        // Second-round finish: strong
+  return 1.10;                         // Later finish: still a bonus
+}
 
 export function computeRecentFormScore(fights: FightRecord[]): number {
   const last5 = fights.slice(0, 5);
-  const weights = [5, 4, 3, 2, 1];
+  const recencyWeights = [5, 4, 3, 2, 1];
   let wWins = 0, wTotal = 0;
   last5.forEach((f, i) => {
-    const w = weights[i] ?? 1;
-    wTotal += w;
-    if (f.result === "W") wWins += w;
+    const rw = recencyWeights[i] ?? 1;
+    const ow = orgWeight(f.event);
+    const fw = f.result === "W" ? finishWeight(f.method, f.round) : 1.0;
+    const totalW = rw * ow;
+    wTotal += totalW;
+    if (f.result === "W") wWins += totalW * fw;
   });
-  return wTotal > 0 ? wWins / wTotal : 0.5;
+  return wTotal > 0 ? Math.min(wWins / wTotal, 1) : 0.5;
 }
+
+// ─── Age factor ──────────────────────────────────────────────────────────────
+// Peak MMA age ~28–32. Penalise fighters on either side.
+
+function ageFactor(age: number): number {
+  if (age < 24) return -0.04;          // Young / inexperienced
+  if (age <= 32) return 0;             // Peak window
+  if (age <= 35) return -(age - 32) * 0.012;  // Mild decline
+  return -(age - 32) * 0.022;          // Steeper decline 36+
+}
+
+// ─── Win probability ─────────────────────────────────────────────────────────
+// 50% recent form (org + finish weighted) · 35% skills · 15% age
 
 export function computeWinProbability(
   f1: Fighter,
@@ -172,8 +203,11 @@ export function computeWinProbability(
   const formTotal = form1 + form2 || 1;
   const fp1 = form1 / formTotal;
 
-  const raw1 = sp1 * 0.4 + fp1 * 0.6;
-  const raw2 = (1 - sp1) * 0.4 + (1 - fp1) * 0.6;
+  // Age-adjusted component: shift from 0.5 baseline
+  const ageAdj1 = 0.5 + ageFactor(f1.stats.age) - ageFactor(f2.stats.age);
+
+  const raw1 = fp1 * 0.50 + sp1 * 0.35 + ageAdj1 * 0.15;
+  const raw2 = (1 - fp1) * 0.50 + (1 - sp1) * 0.35 + (1 - ageAdj1) * 0.15;
   const rawTotal = raw1 + raw2;
 
   return {
@@ -196,6 +230,28 @@ export const FIGHTERS: Record<string, Fighter> = {
     weightClass: "Lightweight",
     nationality: "🇧🇷",
     imageUrls: [
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/PEREIRA_ALICE_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/COWAN_HAILEY_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/FLOWERS_DARRIUS_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/VANNATA_LANDO_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/HOPE_DAKOTA_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/KAMAKA_KAI_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/GATTO_MELISSA_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/BARBOSA_DIONE_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/GORE_TRESEAN_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/BEKOEV_AZAMAT_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/NICOLL_STEWART_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/COSTA_ALESSANDRO_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/PETERSEN_THOMAS_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/PAT_GUILHERME_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/RUCHALA_ROBERT_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/DELANO_JOSEMAURO_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/ZECCHINI_MANOLO_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/MCMILLEN_TOMMY_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/ESTEVAM_RAFAEL_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/EWING_ETHYN_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/RIBEIRO_BRENDSON_L_04-04.png",
+      "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/YAKHYAEV_ABDULRAKHMAN_L_04-04.png",
       "https://ufc.com/images/styles/athlete_bio_full_body/s3/2026-04/MOICANO_RENATO_L_04-04.png",
       "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-06/MOICANO_RENATO_L_06-28.png",
       "https://ufc.com/images/styles/athlete_bio_full_body/s3/2025-01/MOICANO_RENATO_L_01-18.png",
